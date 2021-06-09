@@ -384,8 +384,9 @@ static inline rle16_t run_container_append_value_first(run_container_t *run,
 /* Check whether the container spans the whole chunk (cardinality = 1<<16).
  * This check can be done in constant time (inexpensive). */
 static inline bool run_container_is_full(const run_container_t *run) {
-    rle16_t vl = run->runs[0];
-    return (run->n_runs == 1) && (vl.value == 0) && (vl.length == 0xFFFF);
+    return (run->n_runs == 1) && 
+           (run->runs[0].value == 0) &&
+           (run->runs[0].length == 0xFFFF);
 }
 
 /* Compute the union of `src_1' and `src_2' and write the result to `dst'

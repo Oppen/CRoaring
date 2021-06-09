@@ -1999,6 +1999,125 @@ DEFINE_TEST(run_negation_range_test9) {
                              RUN_CONTAINER_TYPE, false, false);
 }
 
+typedef container_t *(*_container_from_range)(uint32_t start, uint32_t stop);
+
+static bitset_container_t *bitset_from_range(uint32_t start, uint32_t stop) {
+    bitset_container_t *bs = bitset_container_create();
+    bitset_container_add_from_range(bs, start, stop, 1);
+    return bs;
+}
+
+static const _container_from_range _from_range[] = {
+    [BITSET_CONTAINER_TYPE] = (_container_from_range)bitset_from_range,
+    [ARRAY_CONTAINER_TYPE] = (_container_from_range)array_container_create_range,
+    [RUN_CONTAINER_TYPE] = (_container_from_range)run_container_create_range,
+};
+
+static void or_many_combinations(int N, uint8_t types[N]) {
+    assert_true(N >= 2);
+
+    container_t *containers[N];
+
+    for (int i = 0; i < N; ++i) {
+        uint8_t t = types[i];
+        assert_true(t < 4);
+        containers[i] = _from_range[t](i, (i+1) << 3);
+        assert_non_null(containers[i]);
+    }
+
+    uint8_t exptype;
+    container_t *exp;
+
+    // Compare against naive version.
+    exp = container_or(containers[0], types[0], containers[1], types[1], &exptype);
+    assert_non_null(exp);
+    for (int i = 2; i < N; i++) {
+        exp = container_ior(exp, exptype, containers[i], types[i], &exptype);
+        assert_non_null(exp);
+    }
+
+    uint8_t restype;
+    container_t *res;
+           
+    res = container_or_many(N, containers, types, &restype);
+    assert_non_null(res);
+
+    for (int i = 0; i < N; ++i) {
+        assert_ptr_not_equal(containers[i], res);
+    }
+
+    assert_int_equal(container_get_cardinality(exp, exptype),
+                   container_get_cardinality(res, restype));
+    assert_true(container_equals(exp, exptype, res, restype));
+
+    container_free(exp, exptype);
+    container_free(res, restype);
+
+    for (int i = 0; i < N; ++i) {
+        container_free(containers[i], types[i]);
+    }
+}
+
+DEFINE_TEST(or_many_zero_test) {
+    assert_null(container_or_many(0, NULL, NULL, NULL));
+}
+
+DEFINE_TEST(or_many_one_test) {
+    container_t *c = array_container_create_range(1, 10);
+    uint8_t ctype = ARRAY_CONTAINER_TYPE;
+    uint8_t restype;
+    container_t *res = container_or_many(1, &c, &ctype, &restype);
+    assert_non_null(res);
+    assert_ptr_not_equal(c, res);
+    assert_int_equal(container_get_cardinality(c, ctype), container_get_cardinality(res, restype));
+    assert_true(container_equals(c, ctype, res, restype));
+
+    container_free(c, ctype);
+    container_free(res, restype);
+}
+
+DEFINE_TEST(or_many_full_input_test) {
+    uint8_t types[] = {
+        ARRAY_CONTAINER_TYPE,
+        RUN_CONTAINER_TYPE,
+    };
+    container_t *containers[] = {
+        array_container_create(),
+        run_container_create_range(0, (1 << 16)),
+    };
+    uint8_t restype;
+
+    container_t *res = container_or_many(2, containers, types, &restype);
+    assert_non_null(res);
+
+    assert_true(container_equals(res, restype, containers[1], types[1]));
+
+    container_free(containers[0], types[0]);
+    container_free(containers[1], types[1]);
+    container_free(res, restype);
+}
+
+DEFINE_TEST(or_many_combinations_test) {
+    uint8_t t[4];
+    int i1, i2, i3, i4;
+
+    for (i1 = BITSET_CONTAINER_TYPE; i1 <= RUN_CONTAINER_TYPE; ++i1) {
+        t[0] = i1;
+        for (i2 = BITSET_CONTAINER_TYPE; i2 <= RUN_CONTAINER_TYPE; ++i2) {
+            t[1] = i2;
+            or_many_combinations(2, t);
+            for (i3 = BITSET_CONTAINER_TYPE; i3 <= RUN_CONTAINER_TYPE; ++i3) {
+                t[2] = i3;
+                or_many_combinations(3, t);
+                for (i4 = BITSET_CONTAINER_TYPE; i4 <= RUN_CONTAINER_TYPE; ++i4) {
+                    t[3] = i4;
+                    or_many_combinations(4, t);
+                }
+            }
+        }
+    }
+}
+
 int main() {
     tellmeall();
 
@@ -2040,6 +2159,10 @@ int main() {
         cmocka_unit_test(run_negation_range_test7),
         cmocka_unit_test(run_negation_range_test8),
         cmocka_unit_test(run_negation_range_test9),
+        cmocka_unit_test(or_many_zero_test),
+        cmocka_unit_test(or_many_one_test),
+        cmocka_unit_test(or_many_full_input_test),
+        cmocka_unit_test(or_many_combinations_test),
         /* two very expensive tests that probably should usually be
            omitted */
 

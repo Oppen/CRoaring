@@ -139,10 +139,10 @@ void bitset_container_set_range(bitset_container_t *bitset, uint32_t begin,
 
 bool bitset_container_intersect(const bitset_container_t *src_1,
                                   const bitset_container_t *src_2) {
-	// could vectorize, but this is probably already quite fast in practice
+    // could vectorize, but this is probably already quite fast in practice
     const uint64_t * __restrict__ words_1 = src_1->words;
     const uint64_t * __restrict__ words_2 = src_2->words;
-	for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i ++) {
+    for (int i = 0; i < BITSET_CONTAINER_SIZE_IN_WORDS; i ++) {
         if((words_1[i] & words_2[i]) != 0) return true;
     }
     return false;

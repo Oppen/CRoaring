@@ -1497,6 +1497,9 @@ static inline container_t *container_lazy_ior(
     }
 }
 
+container_t* container_or_many(int number, container_t * const *containers,
+                                             uint8_t *types, uint8_t *result_type);
+
 /**
  * Compute symmetric difference (xor) between two containers, generate a new
  * container (having type result_type), requires a typecode. This allocates new

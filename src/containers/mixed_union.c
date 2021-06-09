@@ -11,6 +11,8 @@
 #include <roaring/containers/mixed_union.h>
 #include <roaring/containers/perfparameters.h>
 
+#include <roaring/containers/containers.h>
+
 #ifdef __cplusplus
 extern "C" { namespace roaring { namespace internal {
 #endif
@@ -294,6 +296,274 @@ bool array_array_container_lazy_inplace_union(
         ourbitset->cardinality = BITSET_UNKNOWN_CARDINALITY;
     }
     return returnval;
+}
+
+// TODO: shrink to fit.
+container_t* _container_or_many(int number, container_t * const *containers,
+                                             uint8_t *types, uint8_t *result_type) {
+	bitset_container_t *bitset = NULL;
+	array_container_t *array = NULL;
+	run_container_t *run = NULL;
+	container_t *answer = NULL;
+	uint8_t res_type = 0;
+
+	if (number == 0) {
+		return NULL;
+	}
+	if (number == 1) {
+		*result_type = types[0];
+		return container_clone(containers[0], types[0]);
+	}
+	for (int i = 0; i < number; ++i) {
+		if (container_is_full(containers[i], types[i])) {
+			*result_type = RUN_CONTAINER_TYPE;
+			return run_container_create_range(0, (1 << 16));
+		}
+	}
+	// TODO: check for fullness where reasonable (i.e. mostly runs).
+	for (int i = 0; i < number; ++i) {
+		uint8_t type = types[i];
+		const container_t *c = container_unwrap_shared(containers[i], &type);
+		// There will be at most 3 copies, so I think we can afford them.
+		switch (type) {
+		case BITSET_CONTAINER_TYPE: {
+			if (bitset == NULL) {
+				bitset = bitset_container_clone(const_CAST_bitset(c));
+				break;
+			}
+			bitset_container_or_nocard(bitset, const_CAST_bitset(c), bitset);
+			break;
+		}
+		case ARRAY_CONTAINER_TYPE: {
+			// If we're already dealing with bitset containers we can
+			// avoid pointless allocs and copies by just merging on it.
+			/*
+			if (bitset != NULL) {
+				// TODO: lazy.
+				array_bitset_container_union(const_CAST_array(c), bitset, bitset);
+				break;
+			}
+			*/
+			if (array == NULL) {
+				array = array_container_create_given_capacity(DEFAULT_MAX_SIZE);
+				array_container_copy(const_CAST_array(c), array);
+				break;
+			}
+			container_t *dst = NULL;
+			if (array_array_container_lazy_inplace_union(array, const_CAST_array(c), &dst)) {
+				if (dst == NULL) {
+					// Indicates failure.
+					if (bitset != NULL) {
+						bitset_container_free(bitset);
+					}
+					if (array != NULL) {
+						array_container_free(array);
+					}
+					if (run != NULL) {
+						run_container_free(run);
+					}
+					return NULL;
+				}
+				// bitset == NULL because of early break.
+				bitset = CAST_bitset(dst);
+				array_container_free(array);
+				array = NULL;
+				break;
+			}
+			// Reallocated? Shouldn't happen because we allocated the max.
+			if (dst != NULL) {
+				array_container_free(array);
+				array = CAST_array(dst);
+			}
+			break;
+		}
+		case RUN_CONTAINER_TYPE: {
+			if (run == NULL) {
+				run = run_container_create_given_capacity(DEFAULT_MAX_SIZE);
+				run_container_copy(const_CAST_run(c), run);
+				break;
+			}
+			// TODO: lazy.
+			run_container_union_inplace(run, const_CAST_run(c));
+			break;
+			if (run_container_is_full(run)) {
+				if (array != NULL) {
+					array_container_free(array);
+				}
+				if (bitset != NULL) {
+					bitset_container_free(bitset);
+				}
+				*result_type = RUN_CONTAINER_TYPE;
+				return run;
+			}
+			break;
+		}
+		default:
+			assert(false);
+			__builtin_unreachable();
+			return NULL;
+		}
+		/* FULL SET OPTIMIZATION; computing this every time may be more expensive than it's worth...
+		if ((array != NULL && array_container_full(array)) ||
+				(bitset != NULL && bitset_container_cardinality(bitset) == (1 << 16)) ||
+				(run != NULL && run_container_is_full(run))) {
+			*result_type = RUN_CONTAINER_TYPE;
+			if (array != NULL) {
+				array_container_free(array);
+			}
+			if (bitset != NULL) {
+				bitset_container_free(bitset);
+			}
+			if (run != NULL) {
+				run_container_add_range(run, 0, (1 << 16));
+				return run;
+			}
+			return run_container_create_range(0, (1 << 16));
+		}
+		*/
+	}
+
+	if (bitset != NULL) {
+		if (array != NULL) {
+			array_bitset_container_lazy_union(array, bitset, bitset);
+			array_container_free(array);
+		}
+		if (run != NULL) {
+			run_bitset_container_lazy_union(run, bitset, bitset);
+			run_container_free(run);
+		}
+		answer = bitset;
+		res_type = BITSET_CONTAINER_TYPE;
+	} else if (array != NULL) {
+		if (run != NULL) {
+			array_run_container_inplace_union(array, run);
+			array_container_free(array);
+			answer = run;
+			res_type = RUN_CONTAINER_TYPE;
+		} else {
+			answer = array;
+			res_type = ARRAY_CONTAINER_TYPE;
+		}
+	} else if (run != NULL) {
+		answer = run;
+		res_type = RUN_CONTAINER_TYPE;
+	} else {
+		assert(false);
+		__builtin_unreachable();
+		return NULL;
+	}
+
+	return convert_run_optimize(answer, res_type, result_type);
+}
+
+// TODO: shrink to fit.
+container_t* container_or_many(int number, container_t * const *containers,
+                                             uint8_t *types, uint8_t *result_type) {
+	bitset_container_t *bitset = NULL;
+	run_container_t *run = NULL;
+	container_t *answer = NULL;
+	uint8_t res_type = 0;
+
+	if (number == 0) {
+		return NULL;
+	}
+	if (number == 1) {
+		*result_type = types[0];
+		return container_clone(containers[0], types[0]);
+	}
+	for (int i = 0; i < number; ++i) {
+		if (container_is_full(containers[i], types[i])) {
+			*result_type = RUN_CONTAINER_TYPE;
+			return run_container_create_range(0, (1 << 16));
+		}
+	}
+	// TODO: check for fullness where reasonable (i.e. mostly runs).
+	for (int i = 0; i < number; ++i) {
+		uint8_t type = types[i];
+		const container_t *c = container_unwrap_shared(containers[i], &type);
+		
+		if (!container_nonzero_cardinality(c, type)) {
+			continue;
+		}
+
+		// There will be at most 3 copies, so I think we can afford them.
+		switch (type) {
+		case BITSET_CONTAINER_TYPE: {
+			if (bitset == NULL) {
+				bitset = bitset_container_clone(const_CAST_bitset(c));
+				break;
+			}
+			bitset_container_or_nocard(bitset, const_CAST_bitset(c), bitset);
+			break;
+		}
+		case ARRAY_CONTAINER_TYPE: {
+			// Always use bitsets only for arrays.
+			if (bitset == NULL) {
+				bitset = bitset_container_from_array(const_CAST_array(c));
+				break;
+			}
+			array_bitset_container_lazy_union(const_CAST_array(c), bitset, bitset);
+			break;
+		}
+		case RUN_CONTAINER_TYPE: {
+			if (run == NULL) {
+				run = run_container_create_given_capacity(DEFAULT_MAX_SIZE);
+				run_container_copy(const_CAST_run(c), run);
+				break;
+			}
+			// TODO: lazy.
+			run_container_union_inplace(run, const_CAST_run(c));
+			if (run_container_is_full(run)) {
+				if (bitset != NULL) {
+					bitset_container_free(bitset);
+				}
+				*result_type = RUN_CONTAINER_TYPE;
+				return run;
+			}
+			break;
+		}
+		default:
+			assert(false);
+			__builtin_unreachable();
+			return NULL;
+		}
+		/* FULL SET OPTIMIZATION; computing this every time may be more expensive than it's worth...
+		if ((array != NULL && array_container_full(array)) ||
+				(bitset != NULL && bitset_container_cardinality(bitset) == (1 << 16)) ||
+				(run != NULL && run_container_is_full(run))) {
+			*result_type = RUN_CONTAINER_TYPE;
+			if (array != NULL) {
+				array_container_free(array);
+			}
+			if (bitset != NULL) {
+				bitset_container_free(bitset);
+			}
+			if (run != NULL) {
+				run_container_add_range(run, 0, (1 << 16));
+				return run;
+			}
+			return run_container_create_range(0, (1 << 16));
+		}
+		*/
+	}
+
+	if (bitset != NULL) {
+		if (run != NULL) {
+			run_bitset_container_lazy_union(run, bitset, bitset);
+			run_container_free(run);
+		}
+		answer = bitset;
+		res_type = BITSET_CONTAINER_TYPE;
+	} else if (run != NULL) {
+		answer = run;
+		res_type = RUN_CONTAINER_TYPE;
+	} else {
+		assert(false);
+		__builtin_unreachable();
+		return NULL;
+	}
+
+	return convert_run_optimize(answer, res_type, result_type);
 }
 
 #ifdef __cplusplus

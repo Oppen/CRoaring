@@ -2,6 +2,7 @@ set (BENCHMARK_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/realdata/") # does this eve
 
 add_c_benchmark(create_benchmark)
 add_c_benchmark(adversarialunions_benchmark)
+add_c_benchmark(container_unions_benchmark)
 # We exclude POSIX tests from Visual Studio default build
 if(NOT WIN32)
     add_c_benchmark(real_bitmaps_benchmark)
