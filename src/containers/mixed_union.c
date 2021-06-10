@@ -477,7 +477,7 @@ container_t* container_or_many(int number, container_t * const *containers,
 			return run_container_create_range(0, (1 << 16));
 		}
 	}
-	// TODO: check for fullness where reasonable (i.e. mostly runs).
+	// TODO: check for fullness where reasonable (i.e. mostly runs and arrays).
 	for (int i = 0; i < number; ++i) {
 		uint8_t type = types[i];
 		const container_t *c = container_unwrap_shared(containers[i], &type);
