@@ -96,6 +96,7 @@ if(ENABLE_ROARING_TESTS)
   add_subdirectory(benchmarks)
   add_subdirectory(tests)
 endif()
+set (CMAKE_C_FLAGS_DEBUG "-ggdb -fprofile-generate")
 # Being terse is good, but knowing how the build is configured is important
 # and should not be hard to figure out.
 MESSAGE( STATUS "CMAKE_SYSTEM_PROCESSOR: " ${CMAKE_SYSTEM_PROCESSOR})
