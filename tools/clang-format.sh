@@ -6,9 +6,9 @@ fi
 RE=0
 BASE=$(git rev-parse --show-toplevel)
 if [ $? -ne 0 ]; then
-  ALLFILES=$(find . -name '*.c' -o -name '*.cpp' -o -name '*.h' -o -name '*.cc' -o -name '*.hh')
+  ALLFILES=$(find . \! -path '*/vendor/*' -a \( -name '*.c' -o -name '*.cpp' -o -name '*.h' -o -name '*.cc' -o -name '*.hh' \))
 else
-  ALLFILES=$(git ls-tree --full-tree --name-only  -r HEAD | grep -e ".*\.\(c\|h\|cc\|cpp\|hh\)\$")
+  ALLFILES=$(git ls-tree --full-tree --name-only  -r HEAD | grep -v "/vendor/" | grep -e ".*\.\(c\|h\|cc\|cpp\|hh\)\$")
 fi
 for FILE in $ALLFILES; do
   $STYLE $BASE/$FILE | cmp -s $BASE/$FILE -
