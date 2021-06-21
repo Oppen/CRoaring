@@ -1,11 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <roaring/containers/run.h>
 #include <roaring/portability.h>
 
+#include <roaring/containers/run.h>
+
 #ifdef __cplusplus
-extern "C" { namespace roaring { namespace internal {
+extern "C" {
+namespace roaring {
+namespace internal {
 #endif
 
 extern inline uint16_t run_container_minimum(const run_container_t *run);
@@ -14,15 +17,15 @@ extern inline int32_t interleavedBinarySearch(const rle16_t *array,
                                               int32_t lenarray, uint16_t ikey);
 extern inline bool run_container_contains(const run_container_t *run,
                                           uint16_t pos);
-extern inline int run_container_index_equalorlarger(const run_container_t *arr, uint16_t x);
+extern inline int run_container_index_equalorlarger(const run_container_t *arr,
+                                                    uint16_t x);
 extern inline bool run_container_is_full(const run_container_t *run);
 extern inline bool run_container_nonzero_cardinality(const run_container_t *rc);
 extern inline void run_container_clear(run_container_t *run);
 extern inline int32_t run_container_serialized_size_in_bytes(int32_t num_runs);
 extern inline run_container_t *run_container_create_range(uint32_t start,
-                                                   uint32_t stop);
+                                                          uint32_t stop);
 extern inline int run_container_cardinality(const run_container_t *run);
-
 
 bool run_container_add(run_container_t *run, uint16_t pos) {
     int32_t index = interleavedBinarySearch(run->runs, run->n_runs, pos);
@@ -80,9 +83,10 @@ run_container_t *run_container_create_given_capacity(int32_t size) {
     if ((run = (run_container_t *)malloc(sizeof(run_container_t))) == NULL) {
         return NULL;
     }
-    if (size <= 0 ) { // we don't want to rely on malloc(0)
+    if (size <= 0) {  // we don't want to rely on malloc(0)
         run->runs = NULL;
-    } else if ((run->runs = (rle16_t *)malloc(sizeof(rle16_t) * size)) == NULL) {
+    } else if ((run->runs = (rle16_t *)malloc(sizeof(rle16_t) * size)) ==
+               NULL) {
         free(run);
         return NULL;
     }
@@ -116,20 +120,19 @@ run_container_t *run_container_clone(const run_container_t *src) {
 
 /* Free memory. */
 void run_container_free(run_container_t *run) {
-    if(run->runs != NULL) {// Jon Strabala reports that some tools complain otherwise
-      free(run->runs);
-      run->runs = NULL;  // pedantic
+    if (run->runs !=
+        NULL) {  // Jon Strabala reports that some tools complain otherwise
+        free(run->runs);
+        run->runs = NULL;  // pedantic
     }
     free(run);
 }
 
 void run_container_grow(run_container_t *run, int32_t min, bool copy) {
-    int32_t newCapacity =
-        (run->capacity == 0)
-            ? RUN_DEFAULT_INIT_SIZE
-            : run->capacity < 64 ? run->capacity * 2
-                                 : run->capacity < 1024 ? run->capacity * 3 / 2
-                                                        : run->capacity * 5 / 4;
+    int32_t newCapacity = (run->capacity == 0)   ? RUN_DEFAULT_INIT_SIZE
+                          : run->capacity < 64   ? run->capacity * 2
+                          : run->capacity < 1024 ? run->capacity * 3 / 2
+                                                 : run->capacity * 5 / 4;
     if (newCapacity < min) newCapacity = min;
     run->capacity = newCapacity;
     assert(run->capacity >= min);
@@ -141,13 +144,13 @@ void run_container_grow(run_container_t *run, int32_t min, bool copy) {
     } else {
         // Jon Strabala reports that some tools complain otherwise
         if (run->runs != NULL) {
-          free(run->runs);
+            free(run->runs);
         }
         run->runs = (rle16_t *)malloc(run->capacity * sizeof(rle16_t));
     }
     // handle the case where realloc fails
     if (run->runs == NULL) {
-      fprintf(stderr, "could not allocate memory\n");
+        fprintf(stderr, "could not allocate memory\n");
     }
     assert(run->runs != NULL);
 }
@@ -469,7 +472,7 @@ int run_container_intersection_cardinality(const run_container_t *src_1,
 }
 
 bool run_container_intersect(const run_container_t *src_1,
-                                const run_container_t *src_2) {
+                             const run_container_t *src_2) {
     const bool if1 = run_container_is_full(src_1);
     const bool if2 = run_container_is_full(src_2);
     if (if1 || if2) {
@@ -477,7 +480,7 @@ bool run_container_intersect(const run_container_t *src_1,
             return !run_container_empty(src_2);
         }
         if (if2) {
-        	return !run_container_empty(src_1);
+            return !run_container_empty(src_1);
         }
     }
     int32_t rlepos = 0;
@@ -505,7 +508,6 @@ bool run_container_intersect(const run_container_t *src_1,
     }
     return false;
 }
-
 
 /* Compute the difference of src_1 and src_2 and write the result to
  * dst. It is assumed that dst is distinct from both src_1 and src_2. */
@@ -629,9 +631,9 @@ int32_t run_container_read(int32_t cardinality, run_container_t *container,
     memcpy(&container->n_runs, buf, sizeof(uint16_t));
     if (container->n_runs > container->capacity)
         run_container_grow(container, container->n_runs, false);
-    if(container->n_runs > 0) {
-      memcpy(container->runs, buf + sizeof(uint16_t),
-           container->n_runs * sizeof(rle16_t));
+    if (container->n_runs > 0) {
+        memcpy(container->runs, buf + sizeof(uint16_t),
+               container->n_runs * sizeof(rle16_t));
     }
     return run_container_size_in_bytes(container);
 }
@@ -805,7 +807,8 @@ static inline int _avx2_run_container_cardinality(const run_container_t *run) {
 CROARING_UNTARGET_REGION
 
 /* Get the cardinality of `run'. Requires an actual computation. */
-static inline int _scalar_run_container_cardinality(const run_container_t *run) {
+static inline int _scalar_run_container_cardinality(
+    const run_container_t *run) {
     const int32_t n_runs = run->n_runs;
     const rle16_t *runs = run->runs;
 
@@ -819,11 +822,11 @@ static inline int _scalar_run_container_cardinality(const run_container_t *run) 
 }
 
 int run_container_cardinality(const run_container_t *run) {
-  if( croaring_avx2() ) {
-    return _avx2_run_container_cardinality(run);
-  } else {
-    return _scalar_run_container_cardinality(run);
-  }
+    if (croaring_avx2()) {
+        return _avx2_run_container_cardinality(run);
+    } else {
+        return _scalar_run_container_cardinality(run);
+    }
 }
 #else
 
@@ -842,7 +845,8 @@ int run_container_cardinality(const run_container_t *run) {
 }
 #endif
 
-
 #ifdef __cplusplus
-} } }  // extern "C" { namespace roaring { namespace internal {
+}
+}
+}  // extern "C" { namespace roaring { namespace internal {
 #endif
