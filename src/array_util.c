@@ -1,16 +1,17 @@
 #include <assert.h>
+#include <roaring/array_util.h>
+#include <roaring/portability.h>
+#include <roaring/utilasm.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <roaring/array_util.h>
-#include <roaring/portability.h>
-#include <roaring/utilasm.h>
-
 #ifdef __cplusplus
-extern "C" { namespace roaring { namespace internal {
+extern "C" {
+namespace roaring {
+namespace internal {
 #endif
 
 extern inline int32_t binarySearch(const uint16_t *array, int32_t lenarray,
@@ -565,15 +566,15 @@ int32_t difference_vector16(const uint16_t *__restrict__ A, size_t s_a,
         // spotted in B, these don't get written out.
         __m128i runningmask_a_found_in_b = _mm_setzero_si128();
         /****
-        * start of the main vectorized loop
-        *****/
+         * start of the main vectorized loop
+         *****/
         while (true) {
             // afoundinb will contain a mask indicate for each entry in A
             // whether it is seen
             // in B
-            const __m128i a_found_in_b =
-                _mm_cmpistrm(v_b, v_a, _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_ANY |
-                                           _SIDD_BIT_MASK);
+            const __m128i a_found_in_b = _mm_cmpistrm(
+                v_b, v_a,
+                _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_BIT_MASK);
             runningmask_a_found_in_b =
                 _mm_or_si128(runningmask_a_found_in_b, a_found_in_b);
             // we always compare the last values of A and B
@@ -614,9 +615,9 @@ int32_t difference_vector16(const uint16_t *__restrict__ A, size_t s_a,
             memset(buffer, 0, 8 * sizeof(uint16_t));
             memcpy(buffer, B + i_b, (s_b - i_b) * sizeof(uint16_t));
             v_b = _mm_lddqu_si128((__m128i *)buffer);
-            const __m128i a_found_in_b =
-                _mm_cmpistrm(v_b, v_a, _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_ANY |
-                                           _SIDD_BIT_MASK);
+            const __m128i a_found_in_b = _mm_cmpistrm(
+                v_b, v_a,
+                _SIDD_UWORD_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_BIT_MASK);
             runningmask_a_found_in_b =
                 _mm_or_si128(runningmask_a_found_in_b, a_found_in_b);
             const int bitmask_belongs_to_difference =
@@ -646,15 +647,15 @@ int32_t difference_vector16(const uint16_t *__restrict__ A, size_t s_a,
         }
     }
     if (i_a < s_a) {
-        if(C == A) {
-          assert((size_t)count <= i_a);
-          if((size_t)count < i_a) {
-            memmove(C + count, A + i_a, sizeof(uint16_t) * (s_a - i_a));
-          }
+        if (C == A) {
+            assert((size_t)count <= i_a);
+            if ((size_t)count < i_a) {
+                memmove(C + count, A + i_a, sizeof(uint16_t) * (s_a - i_a));
+            }
         } else {
-           for(size_t i = 0; i < (s_a - i_a); i++) {
+            for (size_t i = 0; i < (s_a - i_a); i++) {
                 C[count + i] = A[i + i_a];
-           }
+            }
         }
         count += (int32_t)(s_a - i_a);
     }
@@ -663,62 +664,58 @@ int32_t difference_vector16(const uint16_t *__restrict__ A, size_t s_a,
 CROARING_UNTARGET_REGION
 #endif  // CROARING_IS_X64
 
-
-
 /**
-* Branchless binary search going after 4 values at once.
-* Assumes that array is sorted.
-* You have that array[*index1] >= target1, array[*index12] >= target2, ...
-* except when *index1 = n, in which case you know that all values in array are
-* smaller than target1, and so forth.
-* It has logarithmic complexity.
-*/
+ * Branchless binary search going after 4 values at once.
+ * Assumes that array is sorted.
+ * You have that array[*index1] >= target1, array[*index12] >= target2, ...
+ * except when *index1 = n, in which case you know that all values in array are
+ * smaller than target1, and so forth.
+ * It has logarithmic complexity.
+ */
 static void binarySearch4(const uint16_t *array, int32_t n, uint16_t target1,
-                   uint16_t target2, uint16_t target3, uint16_t target4,
-                   int32_t *index1, int32_t *index2, int32_t *index3,
-                   int32_t *index4) {
-  const uint16_t *base1 = array;
-  const uint16_t *base2 = array;
-  const uint16_t *base3 = array;
-  const uint16_t *base4 = array;
-  if (n == 0)
-    return;
-  while (n > 1) {
-    int32_t half = n >> 1;
-    base1 = (base1[half] < target1) ? &base1[half] : base1;
-    base2 = (base2[half] < target2) ? &base2[half] : base2;
-    base3 = (base3[half] < target3) ? &base3[half] : base3;
-    base4 = (base4[half] < target4) ? &base4[half] : base4;
-    n -= half;
-  }
-  *index1 = (int32_t)((*base1 < target1) + base1 - array);
-  *index2 = (int32_t)((*base2 < target2) + base2 - array);
-  *index3 = (int32_t)((*base3 < target3) + base3 - array);
-  *index4 = (int32_t)((*base4 < target4) + base4 - array);
+                          uint16_t target2, uint16_t target3, uint16_t target4,
+                          int32_t *index1, int32_t *index2, int32_t *index3,
+                          int32_t *index4) {
+    const uint16_t *base1 = array;
+    const uint16_t *base2 = array;
+    const uint16_t *base3 = array;
+    const uint16_t *base4 = array;
+    if (n == 0) return;
+    while (n > 1) {
+        int32_t half = n >> 1;
+        base1 = (base1[half] < target1) ? &base1[half] : base1;
+        base2 = (base2[half] < target2) ? &base2[half] : base2;
+        base3 = (base3[half] < target3) ? &base3[half] : base3;
+        base4 = (base4[half] < target4) ? &base4[half] : base4;
+        n -= half;
+    }
+    *index1 = (int32_t)((*base1 < target1) + base1 - array);
+    *index2 = (int32_t)((*base2 < target2) + base2 - array);
+    *index3 = (int32_t)((*base3 < target3) + base3 - array);
+    *index4 = (int32_t)((*base4 < target4) + base4 - array);
 }
 
 /**
-* Branchless binary search going after 2 values at once.
-* Assumes that array is sorted.
-* You have that array[*index1] >= target1, array[*index12] >= target2.
-* except when *index1 = n, in which case you know that all values in array are
-* smaller than target1, and so forth.
-* It has logarithmic complexity.
-*/
+ * Branchless binary search going after 2 values at once.
+ * Assumes that array is sorted.
+ * You have that array[*index1] >= target1, array[*index12] >= target2.
+ * except when *index1 = n, in which case you know that all values in array are
+ * smaller than target1, and so forth.
+ * It has logarithmic complexity.
+ */
 static void binarySearch2(const uint16_t *array, int32_t n, uint16_t target1,
-                   uint16_t target2, int32_t *index1, int32_t *index2) {
-  const uint16_t *base1 = array;
-  const uint16_t *base2 = array;
-  if (n == 0)
-    return;
-  while (n > 1) {
-    int32_t half = n >> 1;
-    base1 = (base1[half] < target1) ? &base1[half] : base1;
-    base2 = (base2[half] < target2) ? &base2[half] : base2;
-    n -= half;
-  }
-  *index1 = (int32_t)((*base1 < target1) + base1 - array);
-  *index2 = (int32_t)((*base2 < target2) + base2 - array);
+                          uint16_t target2, int32_t *index1, int32_t *index2) {
+    const uint16_t *base1 = array;
+    const uint16_t *base2 = array;
+    if (n == 0) return;
+    while (n > 1) {
+        int32_t half = n >> 1;
+        base1 = (base1[half] < target1) ? &base1[half] : base1;
+        base2 = (base2[half] < target2) ? &base2[half] : base2;
+        n -= half;
+    }
+    *index1 = (int32_t)((*base1 < target1) + base1 - array);
+    *index2 = (int32_t)((*base2 < target2) + base2 - array);
 }
 
 /* Computes the intersection between one small and one large set of uint16_t.
@@ -728,60 +725,59 @@ static void binarySearch2(const uint16_t *array, int32_t n, uint16_t target1,
  * galloping search in some instances.
  */
 int32_t intersect_skewed_uint16(const uint16_t *small, size_t size_s,
-                                         const uint16_t *large, size_t size_l,
-                                         uint16_t *buffer) {
-  size_t pos = 0, idx_l = 0, idx_s = 0;
+                                const uint16_t *large, size_t size_l,
+                                uint16_t *buffer) {
+    size_t pos = 0, idx_l = 0, idx_s = 0;
 
-  if (0 == size_s) {
-    return 0;
-  }
-  int32_t index1 = 0, index2 = 0, index3 = 0, index4 = 0;
-  while ((idx_s + 4 <= size_s) && (idx_l < size_l)) {
-    uint16_t target1 = small[idx_s];
-    uint16_t target2 = small[idx_s + 1];
-    uint16_t target3 = small[idx_s + 2];
-    uint16_t target4 = small[idx_s + 3];
-    binarySearch4(large + idx_l, (int32_t)(size_l - idx_l), target1, target2, target3,
-                  target4, &index1, &index2, &index3, &index4);
-    if ((index1 + idx_l < size_l) && (large[idx_l + index1] == target1)) {
-      buffer[pos++] = target1;
+    if (0 == size_s) {
+        return 0;
     }
-    if ((index2 + idx_l < size_l) && (large[idx_l + index2] == target2)) {
-      buffer[pos++] = target2;
+    int32_t index1 = 0, index2 = 0, index3 = 0, index4 = 0;
+    while ((idx_s + 4 <= size_s) && (idx_l < size_l)) {
+        uint16_t target1 = small[idx_s];
+        uint16_t target2 = small[idx_s + 1];
+        uint16_t target3 = small[idx_s + 2];
+        uint16_t target4 = small[idx_s + 3];
+        binarySearch4(large + idx_l, (int32_t)(size_l - idx_l), target1,
+                      target2, target3, target4, &index1, &index2, &index3,
+                      &index4);
+        if ((index1 + idx_l < size_l) && (large[idx_l + index1] == target1)) {
+            buffer[pos++] = target1;
+        }
+        if ((index2 + idx_l < size_l) && (large[idx_l + index2] == target2)) {
+            buffer[pos++] = target2;
+        }
+        if ((index3 + idx_l < size_l) && (large[idx_l + index3] == target3)) {
+            buffer[pos++] = target3;
+        }
+        if ((index4 + idx_l < size_l) && (large[idx_l + index4] == target4)) {
+            buffer[pos++] = target4;
+        }
+        idx_s += 4;
+        idx_l += index4;
     }
-    if ((index3 + idx_l < size_l) && (large[idx_l + index3] == target3)) {
-      buffer[pos++] = target3;
+    if ((idx_s + 2 <= size_s) && (idx_l < size_l)) {
+        uint16_t target1 = small[idx_s];
+        uint16_t target2 = small[idx_s + 1];
+        binarySearch2(large + idx_l, (int32_t)(size_l - idx_l), target1,
+                      target2, &index1, &index2);
+        if ((index1 + idx_l < size_l) && (large[idx_l + index1] == target1)) {
+            buffer[pos++] = target1;
+        }
+        if ((index2 + idx_l < size_l) && (large[idx_l + index2] == target2)) {
+            buffer[pos++] = target2;
+        }
+        idx_s += 2;
+        idx_l += index2;
     }
-    if ((index4 + idx_l < size_l) && (large[idx_l + index4] == target4)) {
-      buffer[pos++] = target4;
+    if ((idx_s < size_s) && (idx_l < size_l)) {
+        uint16_t val_s = small[idx_s];
+        int32_t index =
+            binarySearch(large + idx_l, (int32_t)(size_l - idx_l), val_s);
+        if (index >= 0) buffer[pos++] = val_s;
     }
-    idx_s += 4;
-    idx_l += index4;
-  }
-  if ((idx_s + 2 <= size_s) && (idx_l < size_l)) {
-    uint16_t target1 = small[idx_s];
-    uint16_t target2 = small[idx_s + 1];
-    binarySearch2(large + idx_l, (int32_t)(size_l - idx_l), target1, target2, &index1,
-                  &index2);
-    if ((index1 + idx_l < size_l) && (large[idx_l + index1] == target1)) {
-      buffer[pos++] = target1;
-    }
-    if ((index2 + idx_l < size_l) && (large[idx_l + index2] == target2)) {
-      buffer[pos++] = target2;
-    }
-    idx_s += 2;
-    idx_l += index2;
-  }
-  if ((idx_s < size_s) && (idx_l < size_l)) {
-    uint16_t val_s = small[idx_s];
-    int32_t index = binarySearch(large + idx_l, (int32_t)(size_l - idx_l), val_s);
-    if (index >= 0)
-      buffer[pos++] = val_s;
-  }
-  return (int32_t)pos;
+    return (int32_t)pos;
 }
-
-
 
 // TODO: this could be accelerated, possibly, by using binarySearch4 as above.
 int32_t intersect_skewed_uint16_cardinality(const uint16_t *small,
@@ -820,7 +816,7 @@ int32_t intersect_skewed_uint16_cardinality(const uint16_t *small,
 }
 
 bool intersect_skewed_uint16_nonempty(const uint16_t *small, size_t size_s,
-                                const uint16_t *large, size_t size_l) {
+                                      const uint16_t *large, size_t size_l) {
     size_t idx_l = 0, idx_s = 0;
 
     if (0 == size_s) {
@@ -899,9 +895,8 @@ int32_t intersect_uint16_cardinality(const uint16_t *A, const size_t lenA,
     return answer;  // NOTREACHED
 }
 
-
 bool intersect_uint16_nonempty(const uint16_t *A, const size_t lenA,
-                         const uint16_t *B, const size_t lenB) {
+                               const uint16_t *B, const size_t lenB) {
     if (lenA == 0 || lenB == 0) return 0;
     const uint16_t *endA = A + lenA;
     const uint16_t *endB = B + lenB;
@@ -922,8 +917,6 @@ bool intersect_uint16_nonempty(const uint16_t *A, const size_t lenA,
     }
     return false;  // NOTREACHED
 }
-
-
 
 /**
  * Generic intersection function.
@@ -1856,38 +1849,33 @@ size_t union_uint32_card(const uint32_t *set_1, size_t size_1,
     return pos;
 }
 
-
-
-size_t fast_union_uint16(const uint16_t *set_1, size_t size_1, const uint16_t *set_2,
-                    size_t size_2, uint16_t *buffer) {
+size_t fast_union_uint16(const uint16_t *set_1, size_t size_1,
+                         const uint16_t *set_2, size_t size_2,
+                         uint16_t *buffer) {
 #ifdef CROARING_IS_X64
-    if( croaring_avx2() ) {
+    if (croaring_avx2()) {
         // compute union with smallest array first
-      if (size_1 < size_2) {
-        return union_vector16(set_1, (uint32_t)size_1,
-                                          set_2, (uint32_t)size_2, buffer);
-      } else {
-        return union_vector16(set_2, (uint32_t)size_2,
-                                          set_1, (uint32_t)size_1, buffer);
-      }
+        if (size_1 < size_2) {
+            return union_vector16(set_1, (uint32_t)size_1, set_2,
+                                  (uint32_t)size_2, buffer);
+        } else {
+            return union_vector16(set_2, (uint32_t)size_2, set_1,
+                                  (uint32_t)size_1, buffer);
+        }
     } else {
-       // compute union with smallest array first
-      if (size_1 < size_2) {
-        return union_uint16(
-            set_1, size_1, set_2, size_2, buffer);
-      } else {
-        return union_uint16(
-            set_2, size_2, set_1, size_1, buffer);
-      }
+        // compute union with smallest array first
+        if (size_1 < size_2) {
+            return union_uint16(set_1, size_1, set_2, size_2, buffer);
+        } else {
+            return union_uint16(set_2, size_2, set_1, size_1, buffer);
+        }
     }
 #else
     // compute union with smallest array first
     if (size_1 < size_2) {
-        return union_uint16(
-            set_1, size_1, set_2, size_2, buffer);
+        return union_uint16(set_1, size_1, set_2, size_2, buffer);
     } else {
-        return union_uint16(
-            set_2, size_2, set_1, size_1, buffer);
+        return union_uint16(set_2, size_2, set_1, size_1, buffer);
     }
 #endif
 }
@@ -1897,12 +1885,12 @@ bool _avx2_memequals(const void *s1, const void *s2, size_t n) {
     const uint8_t *ptr1 = (const uint8_t *)s1;
     const uint8_t *ptr2 = (const uint8_t *)s2;
     const uint8_t *end1 = ptr1 + n;
-    const uint8_t *end8 = ptr1 + n/8*8;
-    const uint8_t *end32 = ptr1 + n/32*32;
+    const uint8_t *end8 = ptr1 + n / 8 * 8;
+    const uint8_t *end32 = ptr1 + n / 32 * 32;
 
     while (ptr1 < end32) {
-        __m256i r1 = _mm256_loadu_si256((const __m256i*)ptr1);
-        __m256i r2 = _mm256_loadu_si256((const __m256i*)ptr2);
+        __m256i r1 = _mm256_loadu_si256((const __m256i *)ptr1);
+        __m256i r2 = _mm256_loadu_si256((const __m256i *)ptr2);
         int mask = _mm256_movemask_epi8(_mm256_cmpeq_epi8(r1, r2));
         if ((uint32_t)mask != UINT32_MAX) {
             return false;
@@ -1912,8 +1900,8 @@ bool _avx2_memequals(const void *s1, const void *s2, size_t n) {
     }
 
     while (ptr1 < end8) {
-        uint64_t v1 = *((const uint64_t*)ptr1);
-        uint64_t v2 = *((const uint64_t*)ptr2);
+        uint64_t v1 = *((const uint64_t *)ptr1);
+        uint64_t v2 = *((const uint64_t *)ptr2);
         if (v1 != v2) {
             return false;
         }
@@ -1939,10 +1927,10 @@ bool memequals(const void *s1, const void *s2, size_t n) {
         return true;
     }
 #ifdef CROARING_IS_X64
-    if( croaring_avx2() ) {
-      return _avx2_memequals(s1, s2, n);
+    if (croaring_avx2()) {
+        return _avx2_memequals(s1, s2, n);
     } else {
-      return memcmp(s1, s2, n) == 0;
+        return memcmp(s1, s2, n) == 0;
     }
 #else
     return memcmp(s1, s2, n) == 0;
@@ -1950,5 +1938,7 @@ bool memequals(const void *s1, const void *s2, size_t n) {
 }
 
 #ifdef __cplusplus
-} } }  // extern "C" { namespace roaring { namespace internal {
+}
+}
+}  // extern "C" { namespace roaring { namespace internal {
 #endif
