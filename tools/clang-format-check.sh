@@ -11,7 +11,7 @@ else
   ALLFILES=$(git ls-tree --full-tree --name-only  -r HEAD | grep -v "/vendor/" | grep -e ".*\.\(c\|h\|cc\|cpp\|hh\)\$")
 fi
 for FILE in $ALLFILES; do
-  $STYLE $BASE/$FILE | cmp -s $BASE/$FILE -
+  $STYLE --dry-run -Werror $BASE/$FILE &> /dev/null
   if [ $? -ne 0 ]; then
         echo "$BASE/$FILE does not respect the coding style." >&2
         echo "consider typing $STYLE -i $BASE/$FILE to fix the problem." >&2
