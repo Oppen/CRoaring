@@ -4,10 +4,13 @@
 #include <stdint.h>
 
 #include <roaring/portability.h>
+
 #include <roaring/utilasm.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring { namespace internal {
+extern "C" {
+namespace roaring {
+namespace internal {
 #endif
 
 /*
@@ -20,7 +23,7 @@ static inline void bitset_set_range(uint64_t *words, uint32_t start,
     uint32_t endword = (end - 1) / 64;
     if (firstword == endword) {
         words[firstword] |= ((~UINT64_C(0)) << (start % 64)) &
-                             ((~UINT64_C(0)) >> ((~end + 1) % 64));
+                            ((~UINT64_C(0)) >> ((~end + 1) % 64));
         return;
     }
     words[firstword] |= (~UINT64_C(0)) << (start % 64);
@@ -29,7 +32,6 @@ static inline void bitset_set_range(uint64_t *words, uint32_t start,
     }
     words[endword] |= (~UINT64_C(0)) >> ((~end + 1) % 64);
 }
-
 
 /*
  * Find the cardinality of the bitset in [begin,begin+lenminusone]
@@ -63,9 +65,9 @@ static inline bool bitset_lenrange_empty(const uint64_t *words, uint32_t start,
     uint32_t endword = (start + lenminusone) / 64;
     if (firstword == endword) {
         return (words[firstword] & ((~UINT64_C(0)) >> ((63 - lenminusone) % 64))
-              << (start % 64)) == 0;
+                                       << (start % 64)) == 0;
     }
-    if (((words[firstword] & ((~UINT64_C(0)) << (start%64)))) != 0) {
+    if (((words[firstword] & ((~UINT64_C(0)) << (start % 64)))) != 0) {
         return false;
     }
     for (uint32_t i = firstword + 1; i < endword; i++) {
@@ -73,12 +75,12 @@ static inline bool bitset_lenrange_empty(const uint64_t *words, uint32_t start,
             return false;
         }
     }
-    if ((words[endword] & (~UINT64_C(0)) >> (((~start + 1) - lenminusone - 1) % 64)) != 0) {
+    if ((words[endword] &
+         (~UINT64_C(0)) >> (((~start + 1) - lenminusone - 1) % 64)) != 0) {
         return false;
     }
     return true;
 }
-
 
 /*
  * Set all bits in indexes [begin,begin+lenminusone] to true.
@@ -89,7 +91,7 @@ static inline void bitset_set_lenrange(uint64_t *words, uint32_t start,
     uint32_t endword = (start + lenminusone) / 64;
     if (firstword == endword) {
         words[firstword] |= ((~UINT64_C(0)) >> ((63 - lenminusone) % 64))
-                             << (start % 64);
+                            << (start % 64);
         return;
     }
     uint64_t temp = words[endword];
@@ -125,7 +127,7 @@ static inline void bitset_reset_range(uint64_t *words, uint32_t start,
     uint32_t endword = (end - 1) / 64;
     if (firstword == endword) {
         words[firstword] &= ~(((~UINT64_C(0)) << (start % 64)) &
-                               ((~UINT64_C(0)) >> ((~end + 1) % 64)));
+                              ((~UINT64_C(0)) >> ((~end + 1) % 64)));
         return;
     }
     words[firstword] &= ~((~UINT64_C(0)) << (start % 64));
@@ -209,10 +211,9 @@ size_t bitset_extract_setbits_uint16(const uint64_t *words, size_t length,
  *
  * Returns how many values were actually decoded.
  */
-size_t bitset_extract_intersection_setbits_uint16(const uint64_t * __restrict__ words1,
-                                                  const uint64_t * __restrict__ words2,
-                                                  size_t length, uint16_t *out,
-                                                  uint16_t base);
+size_t bitset_extract_intersection_setbits_uint16(
+    const uint64_t *__restrict__ words1, const uint64_t *__restrict__ words2,
+    size_t length, uint16_t *out, uint16_t base);
 
 /*
  * Given a bitset having cardinality card, set all bit values in the list (there
@@ -562,7 +563,7 @@ AVXPOPCNTFNC(intersection, _mm256_and_si256)
 CROARING_UNTARGET_REGION
 
 CROARING_TARGET_AVX2
-AVXPOPCNTFNC (xor, _mm256_xor_si256)
+AVXPOPCNTFNC(xor, _mm256_xor_si256)
 CROARING_UNTARGET_REGION
 
 CROARING_TARGET_AVX2
@@ -576,7 +577,9 @@ CROARING_UNTARGET_REGION
 #endif  // CROARING_IS_X64
 
 #ifdef __cplusplus
-} } }  // extern "C" { namespace roaring { namespace internal
+}
+}
+}  // extern "C" { namespace roaring { namespace internal
 #endif
 
 #endif

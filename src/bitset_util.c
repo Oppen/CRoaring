@@ -1,9 +1,10 @@
 #include <assert.h>
-#include <roaring/bitset_util.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <roaring/bitset_util.h>
 
 #ifdef __cplusplus
 extern "C" {

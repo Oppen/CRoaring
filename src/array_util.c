@@ -1,12 +1,14 @@
 #include <assert.h>
-#include <roaring/array_util.h>
-#include <roaring/portability.h>
-#include <roaring/utilasm.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <roaring/portability.h>
+
+#include <roaring/array_util.h>
+#include <roaring/utilasm.h>
 
 #ifdef __cplusplus
 extern "C" {

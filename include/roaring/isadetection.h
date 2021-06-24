@@ -46,135 +46,133 @@ POSSIBILITY OF SUCH DAMAGE.
 #ifndef ROARING_ISADETECTION_H
 #define ROARING_ISADETECTION_H
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #if defined(_MSC_VER)
 #include <intrin.h>
 #elif defined(HAVE_GCC_GET_CPUID) && defined(USE_GCC_GET_CPUID)
 #include <cpuid.h>
-#endif // defined(_MSC_VER)
-
+#endif  // defined(_MSC_VER)
 
 enum croaring_instruction_set {
-  CROARING_DEFAULT = 0x0,
-  CROARING_NEON = 0x1,
-  CROARING_AVX2 = 0x4,
-  CROARING_SSE42 = 0x8,
-  CROARING_PCLMULQDQ = 0x10,
-  CROARING_BMI1 = 0x20,
-  CROARING_BMI2 = 0x40,
-  CROARING_ALTIVEC = 0x80,
-  CROARING_UNINITIALIZED = 0x8000
+    CROARING_DEFAULT = 0x0,
+    CROARING_NEON = 0x1,
+    CROARING_AVX2 = 0x4,
+    CROARING_SSE42 = 0x8,
+    CROARING_PCLMULQDQ = 0x10,
+    CROARING_BMI1 = 0x20,
+    CROARING_BMI2 = 0x40,
+    CROARING_ALTIVEC = 0x80,
+    CROARING_UNINITIALIZED = 0x8000
 };
 
 #if defined(__PPC64__)
 
 static inline uint32_t dynamic_croaring_detect_supported_architectures() {
-  return CROARING_ALTIVEC;
+    return CROARING_ALTIVEC;
 }
 
-#elif defined(__arm__) || defined(__aarch64__) // incl. armel, armhf, arm64
+#elif defined(__arm__) || defined(__aarch64__)  // incl. armel, armhf, arm64
 
 #if defined(__ARM_NEON)
 
 static inline uint32_t dynamic_croaring_detect_supported_architectures() {
-  return CROARING_NEON;
+    return CROARING_NEON;
 }
 
-#else // ARM without NEON
+#else  // ARM without NEON
 
 static inline uint32_t dynamic_croaring_detect_supported_architectures() {
-  return CROARING_DEFAULT;
+    return CROARING_DEFAULT;
 }
 
 #endif
 
-#elif defined(__x86_64__) || defined(_M_AMD64) // x64
-
-
-
+#elif defined(__x86_64__) || defined(_M_AMD64)  // x64
 
 static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
                          uint32_t *edx) {
 
 #if defined(_MSC_VER)
-  int cpu_info[4];
-  __cpuid(cpu_info, *eax);
-  *eax = cpu_info[0];
-  *ebx = cpu_info[1];
-  *ecx = cpu_info[2];
-  *edx = cpu_info[3];
+    int cpu_info[4];
+    __cpuid(cpu_info, *eax);
+    *eax = cpu_info[0];
+    *ebx = cpu_info[1];
+    *ecx = cpu_info[2];
+    *edx = cpu_info[3];
 #elif defined(HAVE_GCC_GET_CPUID) && defined(USE_GCC_GET_CPUID)
-  uint32_t level = *eax;
-  __get_cpuid(level, eax, ebx, ecx, edx);
+    uint32_t level = *eax;
+    __get_cpuid(level, eax, ebx, ecx, edx);
 #else
-  uint32_t a = *eax, b, c = *ecx, d;
-  __asm__("cpuid\n\t" : "+a"(a), "=b"(b), "+c"(c), "=d"(d));
-  *eax = a;
-  *ebx = b;
-  *ecx = c;
-  *edx = d;
+    uint32_t a = *eax, b, c = *ecx, d;
+    __asm__("cpuid\n\t" : "+a"(a), "=b"(b), "+c"(c), "=d"(d));
+    *eax = a;
+    *ebx = b;
+    *ecx = c;
+    *edx = d;
 #endif
 }
 
 static inline uint32_t dynamic_croaring_detect_supported_architectures() {
-  uint32_t eax, ebx, ecx, edx;
-  uint32_t host_isa = 0x0;
-  // Can be found on Intel ISA Reference for CPUID
-  static uint32_t cpuid_avx2_bit = 1 << 5;      ///< @private Bit 5 of EBX for EAX=0x7
-  static uint32_t cpuid_bmi1_bit = 1 << 3;      ///< @private bit 3 of EBX for EAX=0x7
-  static uint32_t cpuid_bmi2_bit = 1 << 8;      ///< @private bit 8 of EBX for EAX=0x7
-  static uint32_t cpuid_sse42_bit = 1 << 20;    ///< @private bit 20 of ECX for EAX=0x1
-  static uint32_t cpuid_pclmulqdq_bit = 1 << 1; ///< @private bit  1 of ECX for EAX=0x1
-  // ECX for EAX=0x7
-  eax = 0x7;
-  ecx = 0x0;
-  cpuid(&eax, &ebx, &ecx, &edx);
-  if (ebx & cpuid_avx2_bit) {
-    host_isa |= CROARING_AVX2;
-  }
-  if (ebx & cpuid_bmi1_bit) {
-    host_isa |= CROARING_BMI1;
-  }
+    uint32_t eax, ebx, ecx, edx;
+    uint32_t host_isa = 0x0;
+    // Can be found on Intel ISA Reference for CPUID
+    static uint32_t cpuid_avx2_bit =
+        1 << 5;  ///< @private Bit 5 of EBX for EAX=0x7
+    static uint32_t cpuid_bmi1_bit =
+        1 << 3;  ///< @private bit 3 of EBX for EAX=0x7
+    static uint32_t cpuid_bmi2_bit =
+        1 << 8;  ///< @private bit 8 of EBX for EAX=0x7
+    static uint32_t cpuid_sse42_bit =
+        1 << 20;  ///< @private bit 20 of ECX for EAX=0x1
+    static uint32_t cpuid_pclmulqdq_bit =
+        1 << 1;  ///< @private bit  1 of ECX for EAX=0x1
+    // ECX for EAX=0x7
+    eax = 0x7;
+    ecx = 0x0;
+    cpuid(&eax, &ebx, &ecx, &edx);
+    if (ebx & cpuid_avx2_bit) {
+        host_isa |= CROARING_AVX2;
+    }
+    if (ebx & cpuid_bmi1_bit) {
+        host_isa |= CROARING_BMI1;
+    }
 
-  if (ebx & cpuid_bmi2_bit) {
-    host_isa |= CROARING_BMI2;
-  }
+    if (ebx & cpuid_bmi2_bit) {
+        host_isa |= CROARING_BMI2;
+    }
 
-  // EBX for EAX=0x1
-  eax = 0x1;
-  cpuid(&eax, &ebx, &ecx, &edx);
+    // EBX for EAX=0x1
+    eax = 0x1;
+    cpuid(&eax, &ebx, &ecx, &edx);
 
-  if (ecx & cpuid_sse42_bit) {
-    host_isa |= CROARING_SSE42;
-  }
+    if (ecx & cpuid_sse42_bit) {
+        host_isa |= CROARING_SSE42;
+    }
 
-  if (ecx & cpuid_pclmulqdq_bit) {
-    host_isa |= CROARING_PCLMULQDQ;
-  }
+    if (ecx & cpuid_pclmulqdq_bit) {
+        host_isa |= CROARING_PCLMULQDQ;
+    }
 
-  return host_isa;
+    return host_isa;
 }
-#else // fallback
-
+#else  // fallback
 
 static inline uint32_t dynamic_croaring_detect_supported_architectures() {
-  return CROARING_DEFAULT;
+    return CROARING_DEFAULT;
 }
 
+#endif  // end SIMD extension detection code
 
-#endif // end SIMD extension detection code
-
-
-#if defined(__x86_64__) || defined(_M_AMD64) // x64
+#if defined(__x86_64__) || defined(_M_AMD64)  // x64
 
 #if defined(__cplusplus)
 #include <atomic>
 static inline uint32_t croaring_detect_supported_architectures() {
     static std::atomic<int> buffer{CROARING_UNINITIALIZED};
-    if(buffer == CROARING_UNINITIALIZED) {
-      buffer = dynamic_croaring_detect_supported_architectures();
+    if (buffer == CROARING_UNINITIALIZED) {
+        buffer = dynamic_croaring_detect_supported_architectures();
     }
     return buffer;
 }
@@ -182,47 +180,41 @@ static inline uint32_t croaring_detect_supported_architectures() {
 // Visual Studio does not support C11 atomics.
 static inline uint32_t croaring_detect_supported_architectures() {
     static int buffer = CROARING_UNINITIALIZED;
-    if(buffer == CROARING_UNINITIALIZED) {
-      buffer = dynamic_croaring_detect_supported_architectures();
+    if (buffer == CROARING_UNINITIALIZED) {
+        buffer = dynamic_croaring_detect_supported_architectures();
     }
     return buffer;
 }
-#else // defined(__cplusplus) and defined(_MSC_VER) && !defined(__clang__)
+#else  // defined(__cplusplus) and defined(_MSC_VER) && !defined(__clang__)
 #include <stdatomic.h>
 static inline uint32_t croaring_detect_supported_architectures() {
     static _Atomic int buffer = CROARING_UNINITIALIZED;
-    if(buffer == CROARING_UNINITIALIZED) {
-      buffer = dynamic_croaring_detect_supported_architectures();
+    if (buffer == CROARING_UNINITIALIZED) {
+        buffer = dynamic_croaring_detect_supported_architectures();
     }
     return buffer;
 }
-#endif // defined(_MSC_VER) && !defined(__clang__)
+#endif  // defined(_MSC_VER) && !defined(__clang__)
 
 #ifdef ROARING_DISABLE_AVX
-static inline bool croaring_avx2() {
-  return false;
-}
+static inline bool croaring_avx2() { return false; }
 #elif defined(__AVX2__)
-static inline bool croaring_avx2() {
-  return true;
-}
+static inline bool croaring_avx2() { return true; }
 #else
 static inline bool croaring_avx2() {
-  return  (dynamic_croaring_detect_supported_architectures() & CROARING_AVX2) == CROARING_AVX2;
+    return (dynamic_croaring_detect_supported_architectures() &
+            CROARING_AVX2) == CROARING_AVX2;
 }
 #endif
 
+#else   // defined(__x86_64__) || defined(_M_AMD64) // x64
 
-#else // defined(__x86_64__) || defined(_M_AMD64) // x64
-
-static inline bool croaring_avx2() {
-  return false;
-}
+static inline bool croaring_avx2() { return false; }
 
 static inline uint32_t croaring_detect_supported_architectures() {
     // no runtime dispatch
     return dynamic_croaring_detect_supported_architectures();
 }
-#endif // defined(__x86_64__) || defined(_M_AMD64) // x64
+#endif  // defined(__x86_64__) || defined(_M_AMD64) // x64
 
-#endif // ROARING_ISADETECTION_H
+#endif  // ROARING_ISADETECTION_H
