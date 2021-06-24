@@ -6,8 +6,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <roaring/misc/configreport.h>
 #include <roaring/roaring.h>
+
+#include <roaring/misc/configreport.h>
 
 #include "config.h"
 

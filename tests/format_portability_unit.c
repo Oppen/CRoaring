@@ -9,12 +9,11 @@
 #include <string.h>
 
 #include <roaring/roaring.h>
+
 #include <roaring/misc/configreport.h>
 
 #include "config.h"
-
 #include "test.h"
-
 
 long filesize(char const* path) {
     FILE* fp = fopen(path, "rb");

@@ -1,5 +1,4 @@
 #include <iostream>
-
 #include "roaring.hh"
 #include "roaring64map.hh"
 
