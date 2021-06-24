@@ -1,8 +1,9 @@
+#include <stdio.h>
+
 #include <roaring/bitset_util.h>
 #include <roaring/containers/containers.h>
 #include <roaring/containers/convert.h>
 #include <roaring/containers/perfparameters.h>
-#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
