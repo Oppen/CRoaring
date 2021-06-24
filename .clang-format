@@ -8,7 +8,7 @@ IncludeCategories:
 - Regex:        '^<roaring/containers/container_defs\.h>$'
   Priority:     -3
   SortPriority: -3
-- Regex:        '^<roaring/.+\.h>$'
+- Regex:        '^<roaring/.+\.hh?>$'
   Priority:     -2
   SortPriority: -2
 - Regex:        '^".+'
