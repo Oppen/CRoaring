@@ -13,7 +13,9 @@
 #include <roaring/portability.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring { namespace misc {
+extern "C" {
+namespace roaring {
+namespace misc {
 #endif
 
 #ifdef CROARING_IS_X64
@@ -38,7 +40,7 @@ static inline void cpuinfo(int code, int *eax, int *ebx, int *ecx, int *edx) {
                        "=d"(*edx)  // output equal to "movl  %%eax %1"
                      : "a"(code)   // input equal to "movl %1, %%eax"
                      //:"%eax","%ebx","%ecx","%edx"// clobbered register
-                     );
+    );
 #endif /* not sure what to do when inline assembly is unavailable*/
 }
 
@@ -123,29 +125,29 @@ static inline void tellmeall() {
 #ifdef __VERSION__
     printf(" compiler version: %s\t", __VERSION__);
 #endif
-    uint32_t config =  croaring_detect_supported_architectures();
-    if((config & CROARING_NEON) == CROARING_NEON) {
+    uint32_t config = croaring_detect_supported_architectures();
+    if ((config & CROARING_NEON) == CROARING_NEON) {
         printf(" NEON detected\t");
     }
- #ifdef __AVX2__
+#ifdef __AVX2__
     printf(" Building for AVX2\t");
- #endif
-    if(croaring_avx2()) {
-        printf( "AVX2 usable\t");
+#endif
+    if (croaring_avx2()) {
+        printf("AVX2 usable\t");
     }
-    if((config & CROARING_AVX2) == CROARING_AVX2) {
-        printf( "AVX2 detected\t");
-       if(!croaring_avx2()) {
-         printf( "AVX2 not used\t");
-       }
-     }
-    if((config & CROARING_SSE42) == CROARING_SSE42) {
+    if ((config & CROARING_AVX2) == CROARING_AVX2) {
+        printf("AVX2 detected\t");
+        if (!croaring_avx2()) {
+            printf("AVX2 not used\t");
+        }
+    }
+    if ((config & CROARING_SSE42) == CROARING_SSE42) {
         printf(" SSE4.2 detected\t");
     }
-    if((config & CROARING_BMI1) == CROARING_BMI1) {
+    if ((config & CROARING_BMI1) == CROARING_BMI1) {
         printf(" BMI1 detected\t");
     }
-    if((config & CROARING_BMI2) == CROARING_BMI2) {
+    if ((config & CROARING_BMI2) == CROARING_BMI2) {
         printf(" BMI2 detected\t");
     }
     printf("\n");
@@ -177,11 +179,11 @@ static inline void tellmeall() {
 #ifdef __VERSION__
     printf(" compiler version: %s\t", __VERSION__);
 #endif
-    uint32_t config =  croaring_detect_supported_architectures();
-    if((config & CROARING_NEON) == CROARING_NEON) {
+    uint32_t config = croaring_detect_supported_architectures();
+    if ((config & CROARING_NEON) == CROARING_NEON) {
         printf(" NEON detected\t");
     }
-    if((config & CROARING_ALTIVEC) == CROARING_ALTIVEC) {
+    if ((config & CROARING_ALTIVEC) == CROARING_ALTIVEC) {
         printf("Altivec detected\n");
     }
 
@@ -205,7 +207,9 @@ static inline void tellmeall() {
 #endif
 
 #ifdef __cplusplus
-} } }  // extern "C" { namespace roaring { namespace misc {
+}
+}
+}  // extern "C" { namespace roaring { namespace misc {
 #endif
 
 #endif /* INCLUDE_MISC_CONFIGREPORT_H_ */
