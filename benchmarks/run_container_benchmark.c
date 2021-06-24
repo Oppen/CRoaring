@@ -1,6 +1,8 @@
 #include <roaring/portability.h>
+
 #include <roaring/containers/run.h>
 #include <roaring/misc/configreport.h>
+
 #include "benchmark.h"
 #include "random.h"
 
