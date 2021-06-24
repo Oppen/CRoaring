@@ -1,4 +1,5 @@
 #include <roaring/roaring.h>
+
 #include <roaring/roaring_array.h>
 
 #ifdef __cplusplus
