@@ -1,2 +1,19 @@
 BasedOnStyle: Google
 IndentWidth: 4
+IncludeBlocks: Regroup
+IncludeCategories:
+- Regex:        '^<roaring/(roaring(_types)?|portability)\.h>$'
+  Priority:     -4
+  SortPriority: -4
+- Regex:        '^<roaring/containers/container_defs\.h>$'
+  Priority:     -3
+  SortPriority: -3
+- Regex:        '^<roaring/.+\.h>$'
+  Priority:     -2
+  SortPriority: -2
+- Regex:        '^".+'
+  Priority:     -1
+  SortPriority: -1
+- Regex:        '^<.+'
+  Priority:     -1
+  SortPriority: -5
