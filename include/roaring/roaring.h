@@ -6,14 +6,17 @@
 #define ROARING_H
 
 #include <stdbool.h>
-#include <stdint.h>
 #include <stddef.h>  // for `size_t`
+#include <stdint.h>
 
 #include <roaring/roaring_types.h>
+
 #include <roaring/roaring_version.h>
 
 #ifdef __cplusplus
-extern "C" { namespace roaring { namespace api {
+extern "C" {
+namespace roaring {
+namespace api {
 #endif
 
 typedef struct roaring_bitmap_s {
@@ -33,8 +36,9 @@ roaring_bitmap_t *roaring_bitmap_create_with_capacity(uint32_t cap);
  * Returns NULL if the allocation fails.
  * Client is responsible for calling `roaring_bitmap_free()`.
  */
-static inline roaring_bitmap_t *roaring_bitmap_create(void)
-  { return roaring_bitmap_create_with_capacity(0); }
+static inline roaring_bitmap_t *roaring_bitmap_create(void) {
+    return roaring_bitmap_create_with_capacity(0);
+}
 
 /**
  * Initialize a roaring bitmap structure in memory controlled by client.
@@ -48,13 +52,14 @@ bool roaring_bitmap_init_with_capacity(roaring_bitmap_t *r, uint32_t cap);
  * The bitmap will be in a "clear" state, with no auxiliary allocations.
  * Since this performs no allocations, the function will not fail.
  */
-static inline void roaring_bitmap_init_cleared(roaring_bitmap_t *r)
-  { roaring_bitmap_init_with_capacity(r, 0); }
+static inline void roaring_bitmap_init_cleared(roaring_bitmap_t *r) {
+    roaring_bitmap_init_with_capacity(r, 0);
+}
 
 /**
  * Add all the values between min (included) and max (excluded) that are at a
  * distance k*step from min.
-*/
+ */
 roaring_bitmap_t *roaring_bitmap_from_range(uint64_t min, uint64_t max,
                                             uint32_t step);
 
@@ -72,10 +77,10 @@ roaring_bitmap_t *roaring_bitmap_of_ptr(size_t n_args, const uint32_t *vals);
  * do so for all of your bitmaps, since interactions between bitmaps with and
  * without COW is unsafe.
  */
-static inline bool roaring_bitmap_get_copy_on_write(const roaring_bitmap_t* r) {
+static inline bool roaring_bitmap_get_copy_on_write(const roaring_bitmap_t *r) {
     return r->high_low_container.flags & ROARING_FLAG_COW;
 }
-static inline void roaring_bitmap_set_copy_on_write(roaring_bitmap_t* r,
+static inline void roaring_bitmap_set_copy_on_write(roaring_bitmap_t *r,
                                                     bool cow) {
     if (cow) {
         r->high_low_container.flags |= ROARING_FLAG_COW;
@@ -138,8 +143,8 @@ bool roaring_bitmap_intersect(const roaring_bitmap_t *r1,
 /**
  * Check whether a bitmap and a closed range intersect.
  */
-bool roaring_bitmap_intersect_with_range(const roaring_bitmap_t *bm,
-                                         uint64_t x, uint64_t y);
+bool roaring_bitmap_intersect_with_range(const roaring_bitmap_t *bm, uint64_t x,
+                                         uint64_t y);
 
 /**
  * Computes the Jaccard index between two bitmaps. (Also known as the Tanimoto
@@ -275,15 +280,15 @@ bool roaring_bitmap_add_checked(roaring_bitmap_t *r, uint32_t x);
 /**
  * Add all values in range [min, max]
  */
-void roaring_bitmap_add_range_closed(roaring_bitmap_t *r,
-                                     uint32_t min, uint32_t max);
+void roaring_bitmap_add_range_closed(roaring_bitmap_t *r, uint32_t min,
+                                     uint32_t max);
 
 /**
  * Add all values in range [min, max)
  */
-static inline void roaring_bitmap_add_range(roaring_bitmap_t *r,
-                                            uint64_t min, uint64_t max) {
-    if(max == min) return;
+static inline void roaring_bitmap_add_range(roaring_bitmap_t *r, uint64_t min,
+                                            uint64_t max) {
+    if (max == min) return;
     roaring_bitmap_add_range_closed(r, (uint32_t)min, (uint32_t)(max - 1));
 }
 
@@ -295,15 +300,15 @@ void roaring_bitmap_remove(roaring_bitmap_t *r, uint32_t x);
 /**
  * Remove all values in range [min, max]
  */
-void roaring_bitmap_remove_range_closed(roaring_bitmap_t *r,
-                                        uint32_t min, uint32_t max);
+void roaring_bitmap_remove_range_closed(roaring_bitmap_t *r, uint32_t min,
+                                        uint32_t max);
 
 /**
  * Remove all values in range [min, max)
  */
 static inline void roaring_bitmap_remove_range(roaring_bitmap_t *r,
                                                uint64_t min, uint64_t max) {
-    if(max == min) return;
+    if (max == min) return;
     roaring_bitmap_remove_range_closed(r, (uint32_t)min, (uint32_t)(max - 1));
 }
 
@@ -329,8 +334,7 @@ bool roaring_bitmap_contains(const roaring_bitmap_t *r, uint32_t val);
  * to range_end (excluded) is present
  */
 bool roaring_bitmap_contains_range(const roaring_bitmap_t *r,
-                                   uint64_t range_start,
-                                   uint64_t range_end);
+                                   uint64_t range_start, uint64_t range_end);
 
 /**
  * Get the cardinality of the bitmap (number of elements).
@@ -345,10 +349,9 @@ uint64_t roaring_bitmap_range_cardinality(const roaring_bitmap_t *r,
                                           uint64_t range_end);
 
 /**
-* Returns true if the bitmap is empty (cardinality is zero).
-*/
+ * Returns true if the bitmap is empty (cardinality is zero).
+ */
 bool roaring_bitmap_is_empty(const roaring_bitmap_t *r);
-
 
 /**
  * Empties the bitmap.  It will have no auxiliary allocations (so if the bitmap
@@ -366,7 +369,6 @@ void roaring_bitmap_clear(roaring_bitmap_t *r);
  */
 void roaring_bitmap_to_uint32_array(const roaring_bitmap_t *r, uint32_t *ans);
 
-
 /**
  * Convert the bitmap to an array from `offset` by `limit`, output in `ans`.
  *
@@ -376,9 +378,8 @@ void roaring_bitmap_to_uint32_array(const roaring_bitmap_t *r, uint32_t *ans);
  *
  * Return false in case of failure (e.g., insufficient memory)
  */
-bool roaring_bitmap_range_uint32_array(const roaring_bitmap_t *r,
-                                       size_t offset, size_t limit,
-                                       uint32_t *ans);
+bool roaring_bitmap_range_uint32_array(const roaring_bitmap_t *r, size_t offset,
+                                       size_t limit, uint32_t *ans);
 
 /**
  * Remove run-length encoding even when it is more space efficient.
@@ -743,17 +744,17 @@ void roaring_init_iterator_last(const roaring_bitmap_t *r,
 roaring_uint32_iterator_t *roaring_create_iterator(const roaring_bitmap_t *r);
 
 /**
-* Advance the iterator. If there is a new value, then `it->has_value` is true.
-* The new value is in `it->current_value`. Values are traversed in increasing
-* orders. For convenience, returns `it->has_value`.
-*/
+ * Advance the iterator. If there is a new value, then `it->has_value` is true.
+ * The new value is in `it->current_value`. Values are traversed in increasing
+ * orders. For convenience, returns `it->has_value`.
+ */
 bool roaring_advance_uint32_iterator(roaring_uint32_iterator_t *it);
 
 /**
-* Decrement the iterator. If there's a new value, then `it->has_value` is true.
-* The new value is in `it->current_value`. Values are traversed in decreasing
-* order. For convenience, returns `it->has_value`.
-*/
+ * Decrement the iterator. If there's a new value, then `it->has_value` is true.
+ * The new value is in `it->current_value`. Values are traversed in decreasing
+ * order. For convenience, returns `it->has_value`.
+ */
 bool roaring_previous_uint32_iterator(roaring_uint32_iterator_t *it);
 
 /**
@@ -779,7 +780,8 @@ void roaring_free_uint32_iterator(roaring_uint32_iterator_t *it);
 /*
  * Reads next ${count} values from iterator into user-supplied ${buf}.
  * Returns the number of read elements.
- * This number can be smaller than ${count}, which means that iterator is drained.
+ * This number can be smaller than ${count}, which means that iterator is
+ * drained.
  *
  * This function satisfies semantics of iteration and can be used together with
  * other iterator functions.
@@ -787,28 +789,29 @@ void roaring_free_uint32_iterator(roaring_uint32_iterator_t *it);
  *  - after function returns, iterator is positioned at the next element
  */
 uint32_t roaring_read_uint32_iterator(roaring_uint32_iterator_t *it,
-                                      uint32_t* buf, uint32_t count);
+                                      uint32_t *buf, uint32_t count);
 
 #ifdef __cplusplus
-} } }  // extern "C" { namespace roaring { namespace api {
+}
+}
+}  // extern "C" { namespace roaring { namespace api {
 #endif
 
-#endif  /* ROARING_H */
+#endif /* ROARING_H */
 
 #ifdef __cplusplus
-    /**
-     * Best practices for C++ headers is to avoid polluting global scope.
-     * But for C compatibility when just `roaring.h` is included building as
-     * C++, default to global access for the C public API.
-     *
-     * BUT when `roaring.hh` is included instead, it sets this flag.  That way
-     * explicit namespacing must be used to get the C functions.
-     *
-     * This is outside the include guard so that if you include BOTH headers,
-     * the order won't matter; you still get the global definitions.
-     */
-    #if !defined(ROARING_API_NOT_IN_GLOBAL_NAMESPACE)
-        using namespace ::roaring::api;
-    #endif
+/**
+ * Best practices for C++ headers is to avoid polluting global scope.
+ * But for C compatibility when just `roaring.h` is included building as
+ * C++, default to global access for the C public API.
+ *
+ * BUT when `roaring.hh` is included instead, it sets this flag.  That way
+ * explicit namespacing must be used to get the C functions.
+ *
+ * This is outside the include guard so that if you include BOTH headers,
+ * the order won't matter; you still get the global definitions.
+ */
+#if !defined(ROARING_API_NOT_IN_GLOBAL_NAMESPACE)
+using namespace ::roaring::api;
 #endif
-
+#endif

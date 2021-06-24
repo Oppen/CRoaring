@@ -1,12 +1,13 @@
 #include <assert.h>
 #include <inttypes.h>
-#include <roaring/containers/bitset.h>
-#include <roaring/containers/containers.h>
-#include <roaring/roaring_array.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <roaring/containers/bitset.h>
+#include <roaring/containers/containers.h>
+#include <roaring/roaring_array.h>
 
 #ifdef __cplusplus
 extern "C" {
