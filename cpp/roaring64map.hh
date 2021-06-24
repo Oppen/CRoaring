@@ -7,7 +7,7 @@ A C++ header for 64-bit Roaring Bitmaps, implemented by way of a map of many
 
 #include <algorithm>
 #include <cstdarg>  // for va_list handling in bitmapOf()
-#include <cstdio>  // for std::printf() in the printf() method
+#include <cstdio>   // for std::printf() in the printf() method
 #include <cstring>  // for std::memcpy()
 #include <limits>
 #include <map>
@@ -16,7 +16,6 @@ A C++ header for 64-bit Roaring Bitmaps, implemented by way of a map of many
 #include <stdexcept>
 #include <string>
 #include <utility>
-
 #include "roaring.hh"
 using roaring::Roaring;
 
@@ -26,9 +25,9 @@ class Roaring64MapSetBitForwardIterator;
 class Roaring64MapSetBitBiDirectionalIterator;
 
 class Roaring64Map {
-  typedef api::roaring_bitmap_t roaring_bitmap_t;
+    typedef api::roaring_bitmap_t roaring_bitmap_t;
 
-  public:
+   public:
     /**
      * Create an empty bitmap
      */
@@ -59,23 +58,21 @@ class Roaring64Map {
         emplaceOrInsert(0, r);
     }
 
-    Roaring64Map(const Roaring64Map& r)
-      : roarings(r.roarings),
-        copyOnWrite(r.copyOnWrite) { }
+    Roaring64Map(const Roaring64Map &r)
+        : roarings(r.roarings), copyOnWrite(r.copyOnWrite) {}
 
-    Roaring64Map(Roaring64Map&& r)
-      : roarings(r.roarings),
-        copyOnWrite(r.copyOnWrite) { }
+    Roaring64Map(Roaring64Map &&r)
+        : roarings(r.roarings), copyOnWrite(r.copyOnWrite) {}
 
-	/**
-	 * Assignment operator.
-	 */
-	Roaring64Map &operator=(const Roaring64Map &r) {
-		roarings = r.roarings;
-		return *this;
-	}
+    /**
+     * Assignment operator.
+     */
+    Roaring64Map &operator=(const Roaring64Map &r) {
+        roarings = r.roarings;
+        return *this;
+    }
 
-	/**
+    /**
      * Construct a bitmap from a list of integer values.
      */
     static Roaring64Map bitmapOf(size_t n...) {
@@ -104,7 +101,8 @@ class Roaring64Map {
 
     /**
      * Add value x
-     * Returns true if a new value was added, false if the value was already existing.
+     * Returns true if a new value was added, false if the value was already
+     * existing.
      */
     bool addChecked(uint32_t x) {
         bool result = roarings[0].addChecked(x);
@@ -147,11 +145,10 @@ class Roaring64Map {
 
     /**
      * Remove value x
-     * Returns true if a new value was removed, false if the value was not existing.
+     * Returns true if a new value was removed, false if the value was not
+     * existing.
      */
-    bool removeChecked(uint32_t x) {
-        return roarings[0].removeChecked(x);
-    }
+    bool removeChecked(uint32_t x) { return roarings[0].removeChecked(x); }
     bool removeChecked(uint64_t x) {
         auto roaring_iter = roarings.find(highBytes(x));
         if (roaring_iter != roarings.cend())
@@ -159,12 +156,10 @@ class Roaring64Map {
         return false;
     }
 
-	/**
+    /**
      * Clear the bitmap
      */
-	void clear() {
-		roarings.clear();
-	}
+    void clear() { roarings.clear(); }
 
     /**
      * Return the largest value (if not empty)
@@ -291,11 +286,13 @@ class Roaring64Map {
     uint64_t cardinality() const {
         if (isFull()) {
 #if ROARING_EXCEPTIONS
-            throw std::length_error("bitmap is full, cardinality is 2^64, "
-                                    "unable to represent in a 64-bit integer");
+            throw std::length_error(
+                "bitmap is full, cardinality is 2^64, "
+                "unable to represent in a 64-bit integer");
 #else
-            ROARING_TERMINATE("bitmap is full, cardinality is 2^64, "
-                              "unable to represent in a 64-bit integer");
+            ROARING_TERMINATE(
+                "bitmap is full, cardinality is 2^64, "
+                "unable to represent in a 64-bit integer");
 #endif
         }
         return std::accumulate(
@@ -307,8 +304,8 @@ class Roaring64Map {
     }
 
     /**
-    * Returns true if the bitmap is empty (cardinality is zero).
-    */
+     * Returns true if the bitmap is empty (cardinality is zero).
+     */
     bool isEmpty() const {
         return std::all_of(roarings.cbegin(), roarings.cend(),
                            [](const std::pair<uint32_t, Roaring> &map_entry) {
@@ -317,8 +314,8 @@ class Roaring64Map {
     }
 
     /**
-    * Returns true if the bitmap is full (cardinality is max uint64_t + 1).
-    */
+     * Returns true if the bitmap is full (cardinality is max uint64_t + 1).
+     */
     bool isFull() const {
         // only bother to check if map is fully saturated
         //
@@ -328,20 +325,21 @@ class Roaring64Map {
                        ((uint64_t)(std::numeric_limits<uint32_t>::max)()) + 1
                    ? std::all_of(
                          roarings.cbegin(), roarings.cend(),
-                         [](const std::pair<uint32_t, Roaring> &roaring_map_entry) {
+                         [](const std::pair<uint32_t, Roaring>
+                                &roaring_map_entry) {
                              // roarings within map are saturated if cardinality
                              // is uint32_t max + 1
                              return roaring_map_entry.second.cardinality() ==
-                                    ((uint64_t)
-                                         (std::numeric_limits<uint32_t>::max)()) +
+                                    ((uint64_t)(std::numeric_limits<
+                                                uint32_t>::max)()) +
                                         1;
                          })
                    : false;
     }
 
     /**
-    * Returns true if the bitmap is subset of the other.
-    */
+     * Returns true if the bitmap is subset of the other.
+     */
     bool isSubset(const Roaring64Map &r) const {
         for (const auto &map_entry : roarings) {
             auto roaring_iter = r.roarings.find(map_entry.first);
@@ -354,10 +352,11 @@ class Roaring64Map {
     }
 
     /**
-    * Returns true if the bitmap is strict subset of the other.
-    * Throws std::length_error in the special case where the bitmap is full
-    * (cardinality() == 2^64). Check isFull() before calling to avoid exception.
-    */
+     * Returns true if the bitmap is strict subset of the other.
+     * Throws std::length_error in the special case where the bitmap is full
+     * (cardinality() == 2^64). Check isFull() before calling to avoid
+     * exception.
+     */
     bool isStrictSubset(const Roaring64Map &r) const {
         return isSubset(r) && cardinality() != r.cardinality();
     }
@@ -370,14 +369,14 @@ class Roaring64Map {
      */
     void toUint64Array(uint64_t *ans) const {
         // Annoyingly, VS 2017 marks std::accumulate() as [[nodiscard]]
-        (void)std::accumulate(roarings.cbegin(), roarings.cend(), ans,
-                              [](uint64_t *previous,
-                                 const std::pair<uint32_t, Roaring> &map_entry) {
-                                  for (uint32_t low_bits : map_entry.second)
-                                      *previous++ =
-                                          uniteBytes(map_entry.first, low_bits);
-                                  return previous;
-                              });
+        (void)std::accumulate(
+            roarings.cbegin(), roarings.cend(), ans,
+            [](uint64_t *previous,
+               const std::pair<uint32_t, Roaring> &map_entry) {
+                for (uint32_t low_bits : map_entry.second)
+                    *previous++ = uniteBytes(map_entry.first, low_bits);
+                return previous;
+            });
     }
 
     /**
@@ -492,7 +491,7 @@ class Roaring64Map {
     /**
      * If needed, reallocate memory to shrink the memory usage. Returns
      * the number of bytes saved.
-    */
+     */
     size_t shrinkToFit() {
         size_t savedBytes = 0;
         auto iter = roarings.begin();
@@ -548,8 +547,8 @@ class Roaring64Map {
     }
 
     /**
-    * Returns the number of integers that are smaller or equal to x.
-    */
+     * Returns the number of integers that are smaller or equal to x.
+     */
     uint64_t rank(uint64_t x) const {
         uint64_t result = 0;
         auto roaring_destination = roarings.find(highBytes(x));
@@ -584,17 +583,18 @@ class Roaring64Map {
         // push map size
         *((uint64_t *)buf) = roarings.size();
         buf += sizeof(uint64_t);
-        std::for_each(
-            roarings.cbegin(), roarings.cend(),
-            [&buf, portable](const std::pair<const uint32_t, Roaring> &map_entry) {
-                // push map key
-                std::memcpy(buf, &map_entry.first, sizeof(uint32_t));
-                // ^-- Note: `*((uint32_t*)buf) = map_entry.first;` is undefined
+        std::for_each(roarings.cbegin(), roarings.cend(),
+                      [&buf, portable](
+                          const std::pair<const uint32_t, Roaring> &map_entry) {
+                          // push map key
+                          std::memcpy(buf, &map_entry.first, sizeof(uint32_t));
+                          // ^-- Note: `*((uint32_t*)buf) = map_entry.first;` is
+                          // undefined
 
-                buf += sizeof(uint32_t);
-                // push map value Roaring
-                buf += map_entry.second.write(buf, portable);
-            });
+                          buf += sizeof(uint32_t);
+                          // push map value Roaring
+                          buf += map_entry.second.write(buf, portable);
+                      });
         return buf - orig;
     }
 
@@ -609,7 +609,8 @@ class Roaring64Map {
      * sparse bitmaps).
      *
      * This function is unsafe in the sense that if you provide bad data,
-     * many bytes could be read, possibly causing a buffer overflow. See also readSafe.
+     * many bytes could be read, possibly causing a buffer overflow. See also
+     * readSafe.
      */
     static Roaring64Map read(const char *buf, bool portable = true) {
         Roaring64Map result;
@@ -633,8 +634,8 @@ class Roaring64Map {
     }
 
     /**
-     * read a bitmap from a serialized version, reading no more than maxbytes bytes.
-     * This is meant to be compatible with the Java and Go versions.
+     * read a bitmap from a serialized version, reading no more than maxbytes
+     * bytes. This is meant to be compatible with the Java and Go versions.
      *
      * Setting the portable flag to false enable a custom format that
      * can save space compared to the portable format (e.g., for very
@@ -647,7 +648,7 @@ class Roaring64Map {
         buf += sizeof(uint64_t);
         for (uint64_t lcv = 0; lcv < map_size; lcv++) {
             // get map key
-            if(maxbytes < sizeof(uint32_t)) {
+            if (maxbytes < sizeof(uint32_t)) {
 #if ROARING_EXCEPTIONS
                 throw std::runtime_error("ran out of bytes");
 #else
@@ -782,7 +783,8 @@ class Roaring64Map {
      */
     std::string toString() const {
         struct iter_data {
-            std::string str{}; // The empty constructor silences warnings from pedantic static analyzers.
+            std::string str{};  // The empty constructor silences warnings from
+                                // pedantic static analyzers.
             uint32_t high_bits{0};
             char first_char{'{'};
         } outer_iter_data;
@@ -843,32 +845,35 @@ class Roaring64Map {
     }
 
     friend class Roaring64MapSetBitForwardIterator;
-	friend class Roaring64MapSetBitBiDirectionalIterator;
+    friend class Roaring64MapSetBitBiDirectionalIterator;
     typedef Roaring64MapSetBitForwardIterator const_iterator;
-    typedef Roaring64MapSetBitBiDirectionalIterator const_bidirectional_iterator;
+    typedef Roaring64MapSetBitBiDirectionalIterator
+        const_bidirectional_iterator;
 
     /**
-    * Returns an iterator that can be used to access the position of the
-    * set bits. The running time complexity of a full scan is proportional to
-    * the
-    * number
-    * of set bits: be aware that if you have long strings of 1s, this can be
-    * very inefficient.
-    *
-    * It can be much faster to use the toArray method if you want to
-    * retrieve the set bits.
-    */
+     * Returns an iterator that can be used to access the position of the
+     * set bits. The running time complexity of a full scan is proportional to
+     * the
+     * number
+     * of set bits: be aware that if you have long strings of 1s, this can be
+     * very inefficient.
+     *
+     * It can be much faster to use the toArray method if you want to
+     * retrieve the set bits.
+     */
     const_iterator begin() const;
 
     /**
-    * A bogus iterator that can be used together with begin()
-    * for constructions such as for(auto i = b.begin();
-    * i!=b.end(); ++i) {}
-    */
+     * A bogus iterator that can be used together with begin()
+     * for constructions such as for(auto i = b.begin();
+     * i!=b.end(); ++i) {}
+     */
     const_iterator end() const;
 
    private:
-    std::map<uint32_t, Roaring> roarings{}; // The empty constructor silences warnings from pedantic static analyzers.
+    std::map<uint32_t, Roaring>
+        roarings{};  // The empty constructor silences warnings from pedantic
+                     // static analyzers.
     bool copyOnWrite{false};
     static uint32_t highBytes(const uint64_t in) { return uint32_t(in >> 32); }
     static uint32_t lowBytes(const uint64_t in) { return uint32_t(in); }
@@ -951,105 +956,115 @@ class Roaring64MapSetBitForwardIterator {
         return orig;
     }
 
-    bool move(const value_type& x) {
-      map_iter = p.lower_bound(Roaring64Map::highBytes(x));
-      if (map_iter != p.cend()) {
-        roaring_init_iterator(&map_iter->second.roaring, &i);
-        if (map_iter->first == Roaring64Map::highBytes(x)) {
-          if (roaring_move_uint32_iterator_equalorlarger(&i, Roaring64Map::lowBytes(x)))
+    bool move(const value_type &x) {
+        map_iter = p.lower_bound(Roaring64Map::highBytes(x));
+        if (map_iter != p.cend()) {
+            roaring_init_iterator(&map_iter->second.roaring, &i);
+            if (map_iter->first == Roaring64Map::highBytes(x)) {
+                if (roaring_move_uint32_iterator_equalorlarger(
+                        &i, Roaring64Map::lowBytes(x)))
+                    return true;
+                map_iter++;
+                if (map_iter == map_end) return false;
+                roaring_init_iterator(&map_iter->second.roaring, &i);
+            }
             return true;
-          map_iter++;
-          if (map_iter == map_end) return false;
-          roaring_init_iterator(&map_iter->second.roaring, &i);
         }
-        return true;
-      }
-      return false;
+        return false;
     }
 
     bool operator==(const Roaring64MapSetBitForwardIterator &o) const {
-      if (map_iter == map_end && o.map_iter == o.map_end) return true;
-      if (o.map_iter == o.map_end) return false;
-      return **this == *o;
+        if (map_iter == map_end && o.map_iter == o.map_end) return true;
+        if (o.map_iter == o.map_end) return false;
+        return **this == *o;
     }
 
     bool operator!=(const Roaring64MapSetBitForwardIterator &o) const {
-      if (map_iter == map_end && o.map_iter == o.map_end) return false;
-      if (o.map_iter == o.map_end) return true;
-      return **this != *o;
+        if (map_iter == map_end && o.map_iter == o.map_end) return false;
+        if (o.map_iter == o.map_end) return true;
+        return **this != *o;
     }
 
-    Roaring64MapSetBitForwardIterator &operator=(const Roaring64MapSetBitForwardIterator& r) {
-      map_iter = r.map_iter;
-      map_end = r.map_end;
-      i = r.i;
-      return *this;
+    Roaring64MapSetBitForwardIterator &operator=(
+        const Roaring64MapSetBitForwardIterator &r) {
+        map_iter = r.map_iter;
+        map_end = r.map_end;
+        i = r.i;
+        return *this;
     }
 
-    Roaring64MapSetBitForwardIterator(const Roaring64MapSetBitForwardIterator& r)
-      : p(r.p),
-      map_iter(r.map_iter),
-      map_end(r.map_end),
-      i(r.i)
-    { }
+    Roaring64MapSetBitForwardIterator(
+        const Roaring64MapSetBitForwardIterator &r)
+        : p(r.p), map_iter(r.map_iter), map_end(r.map_end), i(r.i) {}
 
     Roaring64MapSetBitForwardIterator(const Roaring64Map &parent,
-        bool exhausted = false)
-      : p(parent.roarings), map_end(parent.roarings.cend()) {
+                                      bool exhausted = false)
+        : p(parent.roarings), map_end(parent.roarings.cend()) {
         if (exhausted || parent.roarings.empty()) {
-          map_iter = parent.roarings.cend();
+            map_iter = parent.roarings.cend();
         } else {
-          map_iter = parent.roarings.cbegin();
-          roaring_init_iterator(&map_iter->second.roaring, &i);
-          while (!i.has_value) {
-            map_iter++;
-            if (map_iter == map_end) return;
+            map_iter = parent.roarings.cbegin();
             roaring_init_iterator(&map_iter->second.roaring, &i);
-          }
+            while (!i.has_value) {
+                map_iter++;
+                if (map_iter == map_end) return;
+                roaring_init_iterator(&map_iter->second.roaring, &i);
+            }
         }
-      }
+    }
 
    protected:
-	const std::map<uint32_t, Roaring>& p;
-    std::map<uint32_t, Roaring>::const_iterator map_iter{}; // The empty constructor silences warnings from pedantic static analyzers.
-    std::map<uint32_t, Roaring>::const_iterator map_end{}; // The empty constructor silences warnings from pedantic static analyzers.
-    api::roaring_uint32_iterator_t i{}; // The empty constructor silences warnings from pedantic static analyzers.
+    const std::map<uint32_t, Roaring> &p;
+    std::map<uint32_t, Roaring>::const_iterator
+        map_iter{};  // The empty constructor silences warnings from pedantic
+                     // static analyzers.
+    std::map<uint32_t, Roaring>::const_iterator
+        map_end{};  // The empty constructor silences warnings from pedantic
+                    // static analyzers.
+    api::roaring_uint32_iterator_t
+        i{};  // The empty constructor silences warnings from pedantic static
+              // analyzers.
 };
 
-class Roaring64MapSetBitBiDirectionalIterator final :public Roaring64MapSetBitForwardIterator {
- public:
-	explicit Roaring64MapSetBitBiDirectionalIterator(const Roaring64Map &parent,
-											bool exhausted = false)
-        : Roaring64MapSetBitForwardIterator(parent, exhausted), map_begin(parent.roarings.cbegin()) {}
+class Roaring64MapSetBitBiDirectionalIterator final
+    : public Roaring64MapSetBitForwardIterator {
+   public:
+    explicit Roaring64MapSetBitBiDirectionalIterator(const Roaring64Map &parent,
+                                                     bool exhausted = false)
+        : Roaring64MapSetBitForwardIterator(parent, exhausted),
+          map_begin(parent.roarings.cbegin()) {}
 
-	Roaring64MapSetBitBiDirectionalIterator &operator=(const Roaring64MapSetBitForwardIterator& r) {
-		*(Roaring64MapSetBitForwardIterator*)this = r;
-		return *this;
-	}
+    Roaring64MapSetBitBiDirectionalIterator &operator=(
+        const Roaring64MapSetBitForwardIterator &r) {
+        *(Roaring64MapSetBitForwardIterator *)this = r;
+        return *this;
+    }
 
-	Roaring64MapSetBitBiDirectionalIterator& operator--() { //  --i, must return dec.value
-		if (map_iter == map_end) {
-			--map_iter;
-			roaring_init_iterator_last(&map_iter->second.roaring, &i);
-			if (i.has_value) return *this;
-		}
+    Roaring64MapSetBitBiDirectionalIterator &
+    operator--() {  //  --i, must return dec.value
+        if (map_iter == map_end) {
+            --map_iter;
+            roaring_init_iterator_last(&map_iter->second.roaring, &i);
+            if (i.has_value) return *this;
+        }
 
-		roaring_previous_uint32_iterator(&i);
+        roaring_previous_uint32_iterator(&i);
         while (!i.has_value) {
-			if (map_iter == map_begin) return *this;
+            if (map_iter == map_begin) return *this;
             map_iter--;
             roaring_init_iterator_last(&map_iter->second.roaring, &i);
         }
         return *this;
     }
 
-	Roaring64MapSetBitBiDirectionalIterator operator--(int) {  // i--, must return orig. value
+    Roaring64MapSetBitBiDirectionalIterator operator--(
+        int) {  // i--, must return orig. value
         Roaring64MapSetBitBiDirectionalIterator orig(*this);
-		if (map_iter == map_end) {
-			--map_iter;
-			roaring_init_iterator_last(&map_iter->second.roaring, &i);
-			return orig;
-		}
+        if (map_iter == map_end) {
+            --map_iter;
+            roaring_init_iterator_last(&map_iter->second.roaring, &i);
+            return orig;
+        }
 
         roaring_previous_uint32_iterator(&i);
         while (!i.has_value) {
@@ -1060,8 +1075,8 @@ class Roaring64MapSetBitBiDirectionalIterator final :public Roaring64MapSetBitFo
         return orig;
     }
 
- protected:
-	std::map<uint32_t, Roaring>::const_iterator map_begin;
+   protected:
+    std::map<uint32_t, Roaring>::const_iterator map_begin;
 };
 
 inline Roaring64MapSetBitForwardIterator Roaring64Map::begin() const {
